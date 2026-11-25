@@ -1,0 +1,19 @@
+{
+  "name": "cv-job-application-agent",
+  "version": "1.0.0",
+  "description": "Two-stage Gemini CV Tailoring & Gmail OAuth Draft Agent",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/genai": "^3.6.1",
+    "adm-zip": "^0.6.1",
+    "cookie-session": "^2.1.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "googleapis": "^190.0.0",
+    "multer": "^1.4.5-lts.1",
+    "pdf-lib": "^1.17.1"
+  }
+}

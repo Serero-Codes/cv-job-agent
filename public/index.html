@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CV Tailoring & Gmail Outreach Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+  <div class="max-w-4xl mx-auto p-6 space-y-8">
+    
+    <!-- Header & Gmail OAuth Status -->
+    <header class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div>
+        <h1 class="text-2xl font-bold text-white">CV & Job Outreach Agent</h1>
+        <p class="text-sm text-slate-400">Upload a job screenshot &rarr; Approve tailored CV edits &rarr; Export draft to Gmail</p>
+      </div>
+      <div id="authSection">
+        <a href="/auth/google" id="connectBtn" class="hidden inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg transition">
+          Connect Gmail Account
+        </a>
+        <div id="connectedBadge" class="hidden flex items-center gap-3">
+          <span class="inline-flex items-center gap-1.5 text-sm text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-3 py-1.5 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Gmail Connected
+          </span>
+          <button onclick="logout()" class="text-xs text-slate-400 hover:text-white underline">Disconnect</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Step 1: Upload Job Screenshot -->
+    <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+      <h2 class="text-lg font-semibold text-white">1. Upload Job Posting Screenshot</h2>
+      <div class="flex flex-col sm:flex-row items-center gap-4">
+        <input type="file" id="screenshotInput" accept="image/*" class="block w-full text-sm text-slate-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer" />
+        <button id="analyzeBtn" onclick="analyzeScreenshot()" class="w-full sm:w-auto whitespace-nowrap bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-lg transition">
+          Analyze & Tailor CV
+        </button>
+      </div>
+      <img id="previewImg" class="hidden max-h-64 rounded-lg border border-slate-700 mt-3" />
+    </section>
+
+    <!-- Step 2: Review & Approve CV Edits (Model 1 Output) -->
+    <section id="reviewSection" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-white">2. Review & Approve CV Adjustments</h2>
+        <span class="text-xs uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded">Approval Required</span>
+      </div>
+
+      <!-- Extracted Metadata -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950 p-4 rounded-lg border border-slate-800 text-sm">
+        <div><span class="text-slate-400">Role:</span> <strong id="metaRole"></strong></div>
+        <div><span class="text-slate-400">Company:</span> <strong id="metaCompany"></strong></div>
+        <div><span class="text-slate-400">Recipient Email:</span> <strong id="metaEmail"></strong></div>
+        <div><span class="text-slate-400">Subject Line:</span> <strong id="metaSubject"></strong></div>
+        <div class="sm:col-span-2"><span class="text-slate-400">Required Attachments:</span> <span id="metaDocs" class="text-indigo-300"></span></div>
+      </div>
+
+      <!-- Editable CV Header & Summary -->
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1">Tailored CV Header Title (Editable)</label>
+          <input type="text" id="editedTitle" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1">Tailored Professional Summary (Editable)</label>
+          <textarea id="editedSummary" rows="5" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button id="approveBtn" onclick="approveAndDraft()" class="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-lg transition">
+          Approve Edits & Create Gmail Draft &rarr;
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 3: Confirmation & Gmail Draft Preview (Model 2 Output) -->
+    <section id="resultSection" class="hidden bg-slate-900 border border-emerald-800/70 rounded-xl p-6 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="text-lg font-semibold text-emerald-400">3. Gmail Draft Created Successfully</h2>
+        <a id="openGmailLink" href="https://mail.google.com/mail/u/0/#drafts" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+          Open in Gmail Drafts &nearr;
+        </a>
+      </div>
+      <div class="bg-slate-950 border border-slate-800 rounded-lg p-4 space-y-2 text-sm">
+        <div><span class="text-slate-400">To:</span> <span id="draftTo" class="text-white font-medium"></span></div>
+        <div><span class="text-slate-400">Subject:</span> <span id="draftSubject" class="text-white font-medium"></span></div>
+        <hr class="border-slate-800 my-2" />
+        <pre id="draftBody" class="whitespace-pre-wrap font-sans text-slate-200 leading-relaxed"></pre>
+      </div>
+      <p class="text-xs text-amber-300">Reminder: Attach your tailored CV and any required documents listed above in Gmail before clicking Send.</p>
+    </section>
+
+  </div>
+
+  <script>
+    let currentJobDetails = null;
+
+    // Check Gmail OAuth Status on load
+    async function checkAuth() {
+      const res = await fetch('/auth/status');
+      const data = await res.json();
+      document.getElementById('connectBtn').classList.toggle('hidden', data.authenticated);
+      document.getElementById('connectedBadge').classList.toggle('hidden', !data.authenticated);
+    }
+    checkAuth();
+
+    async function logout() {
+      await fetch('/auth/logout', { method: 'POST' });
+      checkAuth();
+    }
+
+    // Preview image on select
+    document.getElementById('screenshotInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const img = document.getElementById('previewImg');
+        img.src = URL.createObjectURL(file);
+        img.classList.remove('hidden');
+      }
+    });
+
+    // Step 1 -> Model 1
+    async function analyzeScreenshot() {
+      const fileInput = document.getElementById('screenshotInput');
+      if (!fileInput.files.length) return alert('Select a screenshot first.');
+
+      const btn = document.getElementById('analyzeBtn');
+      btn.disabled = true;
+      btn.textContent = 'Analyzing...';
+
+      try {
+        const formData = new FormData();
+        formData.append('screenshot', fileInput.files[0]);
+
+        const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        currentJobDetails = data;
+        document.getElementById('metaRole').textContent = data.roleTitle;
+        document.getElementById('metaCompany').textContent = data.companyName;
+        document.getElementById('metaEmail').textContent = data.recipientEmail || 'Not found (edit in Gmail)';
+        document.getElementById('metaSubject').textContent = data.requiredSubjectLine || `Application: ${data.roleTitle}`;
+        document.getElementById('metaDocs').textContent = (data.requiredDocuments || []).join(', ') || 'CV';
+
+        document.getElementById('editedTitle').value = data.updatedHeaderTitle;
+        document.getElementById('editedSummary').value = data.updatedProfessionalSummary;
+
+        document.getElementById('reviewSection').classList.remove('hidden');
+        document.getElementById('resultSection').classList.add('hidden');
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Analyze & Tailor CV';
+      }
+    }
+
+    // Step 2 -> Model 2 + Gmail Draft API
+    async function approveAndDraft() {
+      const btn = document.getElementById('approveBtn');
+      btn.disabled = true;
+      btn.textContent = 'Generating & Saving Draft...';
+
+      try {
+        const payload = {
+          jobDetails: currentJobDetails,
+          approvedTitle: document.getElementById('editedTitle').value,
+          approvedSummary: document.getElementById('editedSummary').value,
+        };
+
+        const res = await fetch('/api/draft-gmail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        document.getElementById('draftTo').textContent = data.emailPreview.to;
+        document.getElementById('draftSubject').textContent = data.emailPreview.subject;
+        document.getElementById('draftBody').textContent = data.emailPreview.body;
+        document.getElementById('resultSection').classList.remove('hidden');
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Approve Edits & Create Gmail Draft →';
+      }
+    }
+  </script>
+</body>
+</html>
